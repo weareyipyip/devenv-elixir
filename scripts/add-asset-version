@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# usage: scripts/add-asset-version esbuild|tailwind <version>
+set -euo pipefail
+
+tool=$1
+version=$2
+table="$(dirname "$0")/../lib/asset-binaries.json"
+
+url() {
+  local system=$1
+  case "$tool:$system" in
+  esbuild:*)
+    local platform
+    platform=$(sed -e 's/aarch64-darwin/darwin-arm64/;s/x86_64-darwin/darwin-x64/;s/aarch64-linux/linux-arm64/;s/x86_64-linux/linux-x64/' <<<"$system")
+    echo "https://registry.npmjs.org/@esbuild/$platform/-/$platform-$version.tgz"
+    ;;
+  tailwind:*)
+    local platform
+    platform=$(sed -e 's/aarch64-darwin/macos-arm64/;s/x86_64-darwin/macos-x64/;s/aarch64-linux/linux-arm64/;s/x86_64-linux/linux-x64/' <<<"$system")
+    echo "https://github.com/tailwindlabs/tailwindcss/releases/download/v$version/tailwindcss-$platform"
+    ;;
+  *)
+    echo "unknown tool: $tool" >&2
+    exit 1
+    ;;
+  esac
+}
+
+entry='{}'
+for system in aarch64-darwin x86_64-darwin aarch64-linux x86_64-linux; do
+  hash=$(nix store prefetch-file --json "$(url "$system")" | jq -r .hash)
+  entry=$(jq --arg system "$system" --arg hash "$hash" '. + {($system): $hash}' <<<"$entry")
+done
+
+jq --arg tool "$tool" --arg version "$version" --argjson entry "$entry" \
+  '.[$tool][$version] = $entry' "$table" >"$table.tmp"
+mv "$table.tmp" "$table"

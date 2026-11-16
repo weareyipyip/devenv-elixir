@@ -38,6 +38,7 @@ in
 |---|---|
 | `beam` | minimal BEAM set for releases |
 | `dev` | BEAM set for the shell: the full set with wx on macOS, the same versions as `beam` |
+| `assetEnv root` | `ERL_ZFLAGS` that point the esbuild and tailwind packages at the versions pinned in `config/config.exs` |
 | `mixRelease { pname, version, root, mixEnv ? "prod", release ? null, extraConfig ? [ ], extraSources ? [ ], postBuild ? null, nativeBuildInputs ? [ ], buildInputs ? [ ] }` | `{ deps, release, name, bin }` |
 | `image { name, app, entrypoint ? null, tag ? "latest", contents ? [ ], env ? [ ] }` | layered OCI image running as 65534 |
 | `sbom { name, version, image, mixLock }` | CycloneDX JSON |
@@ -48,13 +49,21 @@ in
 - **Sources:** `lib`, `priv`, `src`, `rel`, `apps` and `assets` under `root`, those that exist, plus `extraSources`.
 - **Dependencies:** Hex and git dependencies come from `mix.lock`.
 - **Version:** `version` replaces `0.0.0+development` in every `mix.exs`.
-- **Assets:** for Phoenix apps without an `assets.deploy` alias the release runs `mix phx.digest`; apps with the alias pass `postBuild`.
+- **Assets:** with an `assets.deploy` alias the release runs it with esbuild and tailwind at the versions pinned in `config/config.exs`; other Phoenix apps get `mix phx.digest`.
 - **Release name:** umbrellas pass `release`.
+
+## esbuild and tailwind versions
+
+`lib/asset-binaries.json` holds the hashes per version and platform. A project pinning a version that is not listed fails with the command that adds it:
+
+```sh
+scripts/add-asset-version tailwind 4.1.12
+```
 
 ## Test
 
 ```sh
-devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.image outputs.sbom
+devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.image outputs.sbom
 ```
 
 Each fixture in `fixtures/` builds a release and runs its `check/0` inside it.

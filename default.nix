@@ -46,6 +46,35 @@ let
 
   existing = lib.filter builtins.pathExists;
 
+  assetBinariesFor =
+    root:
+    import ./lib/asset-binaries.nix {
+      inherit lib;
+      inherit (pkgs)
+        stdenv
+        fetchurl
+        autoPatchelfHook
+        makeWrapper
+        ;
+      inherit (pkgs.darwin) sigtool;
+      configExs = root + "/config/config.exs";
+    };
+
+  # The esbuild and tailwind packages only read config :esbuild/:tailwind, :path, which no project
+  # sets, so the path goes in as application env through erl flags. Erlang strips unescaped quotes.
+  assetEnvFor =
+    binaries:
+    let
+      flags = lib.concatStringsSep " " (
+        lib.optional (binaries.esbuild != null) ''-esbuild path <<\"${lib.getExe binaries.esbuild}\">>''
+        ++ lib.optional (binaries.tailwind != null) ''-tailwind path <<\"${lib.getExe binaries.tailwind}\">>''
+      );
+    in
+    lib.optionalAttrs (flags != "") { ERL_ZFLAGS = flags; };
+
+  # ERL_ZFLAGS that point esbuild and tailwind at the versions pinned in config/config.exs
+  assetEnv = root: assetEnvFor (assetBinariesFor root);
+
   # Returns { deps, release, name, bin }. deps holds the compiled dependencies and only rebuilds
   # when mix.exs, mix.lock or the compile-time config changes, so CI can cache it.
   mixRelease =
@@ -126,9 +155,15 @@ let
           fileset = lib.fileset.unions files;
         };
 
+      assetBinaries = assetBinariesFor root;
+
+      # deps.loadpaths runs once per mix invocation, so the alias's tasks skip the deps check
       defaultPostBuild =
         if lib.hasInfix "\"assets.deploy\"" mixExs then
-          throw "devenv-elixir: ${pname} has an assets.deploy alias, which mixRelease does not run yet; pass postBuild"
+          ''
+            ${lib.concatStrings (lib.mapAttrsToList (name: value: "export ${name}='${value}'\n") (assetEnvFor assetBinaries))}
+            mix do deps.loadpaths --no-deps-check + assets.deploy
+          ''
         else if builtins.elem "phoenix" lockDeps.names then
           ''
             mkdir -p priv/static
@@ -259,6 +294,7 @@ in
   inherit
     beam
     dev
+    assetEnv
     mixRelease
     image
     sbom

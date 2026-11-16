@@ -81,6 +81,22 @@ in
     mixLock = ./fixtures/prod-runtime/mix.lock;
   };
 
+  outputs.mix-assets = fixture {
+    otp = "28";
+    elixir = "1.19";
+    check = "FxAssets";
+    pname = "fx_assets";
+    root = ./fixtures/mix-assets;
+  };
+
+  outputs.mix-assets-tw3 = fixture {
+    otp = "27";
+    elixir = "1.18";
+    check = "FxTw3";
+    pname = "fx_tw3";
+    root = ./fixtures/mix-assets-tw3;
+  };
+
   languages.elixir = {
     enable = true;
     package = dev.elixir;
