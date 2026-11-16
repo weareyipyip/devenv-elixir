@@ -51,6 +51,7 @@ in
 - **Version:** `version` replaces `0.0.0+development` in every `mix.exs`.
 - **Assets:** with an `assets.deploy` alias the release runs it with esbuild and tailwind at the versions pinned in `config/config.exs`; other Phoenix apps get `mix phx.digest`.
 - **npm:** every `package-lock.json` at the root, in `assets/` or in `apps/*/assets/` gets an offline `npm ci` before the build. Each needs a hash in `npmDepsHashes`, keyed by directory; set it to `""` and the build prints it.
+- **Prebuilt NIFs:** exqlite, lazy_html, mdex_native and vix download a prebuilt NIF at compile time. The helper fetches the files for the build platform by the checksums each package ships and points `ELIXIR_MAKE_CACHE_DIR` and `RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH` at them. Other packages that do this cause a warning; add their GitHub repo in `lib/precompiled-nifs.nix`.
 - **Release name:** umbrellas pass `release`.
 
 ## esbuild and tailwind versions
@@ -64,7 +65,7 @@ scripts/add-asset-version tailwind 4.1.12
 ## Test
 
 ```sh
-devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.image outputs.sbom
+devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.precompiled-nifs outputs.image outputs.sbom
 ```
 
 Each fixture in `fixtures/` builds a release and runs its `check/0` inside it.

@@ -106,6 +106,14 @@ in
     npmDepsHashes.assets = "sha256-Ki7Pfiu1AV4DlyoIhBim22lGomu5q8+3jr4iBPzKSdQ=";
   };
 
+  outputs.precompiled-nifs = fixture {
+    otp = "28";
+    elixir = "1.19";
+    check = "FxNifs";
+    pname = "fx_nifs";
+    root = ./fixtures/precompiled-nifs;
+  };
+
   languages.elixir = {
     enable = true;
     package = dev.elixir;

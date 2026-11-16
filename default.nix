@@ -121,6 +121,14 @@ let
         mixLock = root + "/mix.lock";
       };
 
+      precompiledNifs = import ./lib/precompiled-nifs.nix {
+        inherit lib;
+        inherit (pkgs) fetchurl linkFarm;
+        inherit (pkgs.stdenv.hostPlatform) system;
+        name = pname;
+        inherit (lockDeps) dependencies;
+      };
+
       config = file: root + "/config/${file}";
       compileConfig = existing [
         (config "config.exs")
@@ -187,6 +195,7 @@ let
         version = "0";
         inherit mixEnv nativeBuildInputs buildInputs;
         mixFodDeps = lockDeps.directory;
+        env = precompiledNifs.env;
         src = toSource depsFiles;
         buildPhase = "true";
         installPhase = "cp -r _build $out";
@@ -203,6 +212,7 @@ let
         nativeBuildInputs = nativeBuildInputs ++ npmDeps.nativeBuildInputs;
         mixReleaseName = lib.optionalString (release != null) release;
         mixFodDeps = lockDeps.directory;
+        env = precompiledNifs.env;
         src = toSource (depsFiles ++ appFiles);
         dontMixDepsCompile = true;
         # the version lives in VERSION; mix.exs files hold this placeholder
