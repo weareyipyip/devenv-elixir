@@ -50,13 +50,7 @@ let
     root:
     import ./lib/asset-binaries.nix {
       inherit lib;
-      inherit (pkgs)
-        stdenv
-        fetchurl
-        autoPatchelfHook
-        makeWrapper
-        ;
-      inherit (pkgs.darwin) sigtool;
+      inherit (pkgs) esbuild tailwindcss_3 tailwindcss_4;
       configExs = root + "/config/config.exs";
     };
 
@@ -87,16 +81,14 @@ let
       extraConfig ? [ ],
       extraSources ? [ ],
       postBuild ? null,
-      npmDepsHashes ? { },
       nodejs ? pkgs.nodejs,
       nativeBuildInputs ? [ ],
       buildInputs ? [ ],
     }:
     let
       npmDeps = import ./lib/npm-deps.nix {
-        inherit lib nodejs pname root;
-        inherit (pkgs) fetchNpmDeps prefetch-npm-deps;
-        hashes = npmDepsHashes;
+        inherit lib nodejs root;
+        inherit (pkgs) importNpmLock;
       };
 
       mixExs = builtins.readFile (root + "/mix.exs");

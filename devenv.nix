@@ -103,7 +103,6 @@ in
     check = "FxNpm";
     pname = "fx_npm";
     root = ./fixtures/npm-assets;
-    npmDepsHashes.assets = "sha256-Ki7Pfiu1AV4DlyoIhBim22lGomu5q8+3jr4iBPzKSdQ=";
   };
 
   outputs.precompiled-nifs = fixture {
