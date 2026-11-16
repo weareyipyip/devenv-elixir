@@ -240,6 +240,22 @@ let
           ${npmDeps.script}
         '';
         postBuild = if postBuild == null then defaultPostBuild else postBuild;
+        # tzdata updates itself by writing into its priv dir, which is read-only in the Nix store;
+        # an autoupdate setting from the project's config wins
+        postInstall = lib.optionalString (builtins.elem "tzdata" lockDeps.names) ''
+          for config in $out/releases/*/sys.config; do
+            erl -noshell -eval '
+              [File] = init:get_plain_arguments(),
+              {ok, [Config]} = file:consult(File),
+              Tzdata = proplists:get_value(tzdata, Config, []),
+              Patched = case lists:keymember(autoupdate, 1, Tzdata) of
+                true -> Config;
+                false -> lists:keystore(tzdata, 1, Config, {tzdata, [{autoupdate, disabled} | Tzdata]})
+              end,
+              ok = file:write_file(File, io_lib:format("~tp.~n", [Patched])),
+              halt().' -extra "$config"
+          done
+        '';
       };
     in
     {

@@ -122,6 +122,14 @@ in
     root = ./fixtures/appsignal;
   };
 
+  outputs.tzdata = fixture {
+    otp = "28";
+    elixir = "1.19";
+    check = "FxTzdata";
+    pname = "fx_tzdata";
+    root = ./fixtures/tzdata;
+  };
+
   languages.elixir = {
     enable = true;
     package = dev.elixir;
