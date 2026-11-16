@@ -114,6 +114,14 @@ in
     root = ./fixtures/precompiled-nifs;
   };
 
+  outputs.appsignal = fixture {
+    otp = "27";
+    elixir = "1.18";
+    check = "FxAppsignal";
+    pname = "fx_appsignal";
+    root = ./fixtures/appsignal;
+  };
+
   languages.elixir = {
     enable = true;
     package = dev.elixir;

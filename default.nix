@@ -129,6 +129,13 @@ let
         inherit (lockDeps) dependencies;
       };
 
+      appsignalAgent = import ./lib/appsignal-agent.nix {
+        inherit lib;
+        inherit (pkgs) fetchurl;
+        inherit (pkgs.stdenv.hostPlatform) system;
+        inherit (lockDeps) dependencies;
+      };
+
       config = file: root + "/config/${file}";
       compileConfig = existing [
         (config "config.exs")
@@ -196,9 +203,17 @@ let
         inherit mixEnv nativeBuildInputs buildInputs;
         mixFodDeps = lockDeps.directory;
         env = precompiledNifs.env;
+        inherit (appsignalAgent) preConfigure;
         src = toSource depsFiles;
         buildPhase = "true";
-        installPhase = "cp -r _build $out";
+        # deps such as appsignal write into deps/<app>/priv, which _build only links to
+        installPhase = ''
+          cp -r _build $out
+          find _build -name priv -type l | while read -r link; do
+            rm "$out/''${link#_build/}"
+            cp -r "$(readlink -f "$link")" "$out/''${link#_build/}"
+          done
+        '';
         dontFixup = true;
       };
 
