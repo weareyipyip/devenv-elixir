@@ -1,0 +1,9 @@
+# a version range instead of true: true compares the CLI with a version file in the
+# modules that lags behind releases (it says 2.3.1 at the v2.4.0 tag)
+require_version: ">=2.4.0, <2.5"
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  # a release tag: without an explicit input the modules track devenv's main branch
+  devenv:
+    url: github:cachix/devenv/v2.4.0?dir=src/modules
