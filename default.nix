@@ -87,10 +87,18 @@ let
       extraConfig ? [ ],
       extraSources ? [ ],
       postBuild ? null,
+      npmDepsHashes ? { },
+      nodejs ? pkgs.nodejs,
       nativeBuildInputs ? [ ],
       buildInputs ? [ ],
     }:
     let
+      npmDeps = import ./lib/npm-deps.nix {
+        inherit lib nodejs pname root;
+        inherit (pkgs) fetchNpmDeps prefetch-npm-deps;
+        hashes = npmDepsHashes;
+      };
+
       mixExs = builtins.readFile (root + "/mix.exs");
       isUmbrella = lib.hasInfix "apps_path:" mixExs;
       appMatches = lib.filter (match: match != null) (
@@ -144,6 +152,8 @@ let
             "rel"
             "apps"
             "assets"
+            "package.json"
+            "package-lock.json"
           ]
         )
         ++ extraSources;
@@ -188,9 +198,9 @@ let
           pname
           version
           mixEnv
-          nativeBuildInputs
           buildInputs
           ;
+        nativeBuildInputs = nativeBuildInputs ++ npmDeps.nativeBuildInputs;
         mixReleaseName = lib.optionalString (release != null) release;
         mixFodDeps = lockDeps.directory;
         src = toSource (depsFiles ++ appFiles);
@@ -202,6 +212,7 @@ let
           done
           cp -r ${deps}/. _build
           chmod -R u+w _build
+          ${npmDeps.script}
         '';
         postBuild = if postBuild == null then defaultPostBuild else postBuild;
       };

@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "deploy": "esbuild js/app.js --bundle --minify --outfile=../priv/static/assets/app.js"
+  },
+  "dependencies": {
+    "lodash.camelcase": "^4.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.4"
+  }
+}

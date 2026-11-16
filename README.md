@@ -39,7 +39,7 @@ in
 | `beam` | minimal BEAM set for releases |
 | `dev` | BEAM set for the shell: the full set with wx on macOS, the same versions as `beam` |
 | `assetEnv root` | `ERL_ZFLAGS` that point the esbuild and tailwind packages at the versions pinned in `config/config.exs` |
-| `mixRelease { pname, version, root, mixEnv ? "prod", release ? null, extraConfig ? [ ], extraSources ? [ ], postBuild ? null, nativeBuildInputs ? [ ], buildInputs ? [ ] }` | `{ deps, release, name, bin }` |
+| `mixRelease { pname, version, root, mixEnv ? "prod", release ? null, extraConfig ? [ ], extraSources ? [ ], postBuild ? null, npmDepsHashes ? { }, nodejs ? pkgs.nodejs, nativeBuildInputs ? [ ], buildInputs ? [ ] }` | `{ deps, release, name, bin }` |
 | `image { name, app, entrypoint ? null, tag ? "latest", contents ? [ ], env ? [ ] }` | layered OCI image running as 65534 |
 | `sbom { name, version, image, mixLock }` | CycloneDX JSON |
 
@@ -50,6 +50,7 @@ in
 - **Dependencies:** Hex and git dependencies come from `mix.lock`.
 - **Version:** `version` replaces `0.0.0+development` in every `mix.exs`.
 - **Assets:** with an `assets.deploy` alias the release runs it with esbuild and tailwind at the versions pinned in `config/config.exs`; other Phoenix apps get `mix phx.digest`.
+- **npm:** every `package-lock.json` at the root, in `assets/` or in `apps/*/assets/` gets an offline `npm ci` before the build. Each needs a hash in `npmDepsHashes`, keyed by directory; set it to `""` and the build prints it.
 - **Release name:** umbrellas pass `release`.
 
 ## esbuild and tailwind versions
@@ -63,7 +64,7 @@ scripts/add-asset-version tailwind 4.1.12
 ## Test
 
 ```sh
-devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.image outputs.sbom
+devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.image outputs.sbom
 ```
 
 Each fixture in `fixtures/` builds a release and runs its `check/0` inside it.
