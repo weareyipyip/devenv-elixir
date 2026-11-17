@@ -43,4 +43,4 @@ jobs:
           if devenv build outputs.precompiled-nifs > build.log 2>&1; then
             echo "::error::built without the module"; exit 1
           fi
-          grep -iE 'nxdomain|econnrefused|failed to connect|could not|download|httpc|error' build.log | grep -v '^@nix' | head -30
+          grep -vE 'Downloading|Building|structuredAttrs|^ +(% |[0-9])|^@nix' build.log | tail -60
