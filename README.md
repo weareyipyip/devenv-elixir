@@ -8,9 +8,11 @@ Nix helpers that build Elixir releases, images and SBOMs from a stock devenv set
 # devenv.yaml
 inputs:
   devenv-elixir:
-    url: github:weareyipyip/devenv-elixir/v1.0.0
+    url: github:weareyipyip/devenv-elixir/9fadd88cb6709b014164881052b34a48d9e83aa2
     flake: false
 ```
+
+Pin a commit. To update, change it and run `devenv update devenv-elixir`.
 
 ```nix
 # devenv.nix
@@ -62,4 +64,4 @@ in
 devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.precompiled-nifs outputs.appsignal outputs.tzdata outputs.image outputs.sbom
 ```
 
-Each fixture in `fixtures/` builds a release and runs its `check/0` inside it.
+Each fixture in `fixtures/` builds a release and runs its `check/0` inside it. CI builds them on x86_64 and aarch64 Linux.
