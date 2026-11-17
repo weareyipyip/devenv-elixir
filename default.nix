@@ -49,25 +49,30 @@ let
   assetBinariesFor =
     root:
     import ./lib/asset-binaries.nix {
-      inherit lib;
-      inherit (pkgs) esbuild tailwindcss_3 tailwindcss_4;
-      configExs = root + "/config/config.exs";
+      inherit lib root;
+      npmDirs =
+        (import ./lib/npm-deps.nix {
+          inherit lib root;
+          inherit (pkgs) importNpmLock nodejs;
+        }).dirs;
     };
 
   # The esbuild and tailwind packages only read config :esbuild/:tailwind, :path, which no project
   # sets, so the path goes in as application env through erl flags. Erlang strips unescaped quotes.
-  assetEnvFor =
-    binaries:
+  erlFlags =
+    quote: prefix: binaries:
+    lib.concatStringsSep " " (
+      lib.optional (binaries.esbuild != null) "-esbuild path <<${quote}${prefix}/${binaries.esbuild}${quote}>>"
+      ++ lib.optional (binaries.tailwind != null) "-tailwind path <<${quote}${prefix}/${binaries.tailwind}${quote}>>"
+    );
+
+  # ERL_ZFLAGS that point esbuild and tailwind at the project's node_modules
+  assetEnv =
+    root:
     let
-      flags = lib.concatStringsSep " " (
-        lib.optional (binaries.esbuild != null) ''-esbuild path <<\"${lib.getExe binaries.esbuild}\">>''
-        ++ lib.optional (binaries.tailwind != null) ''-tailwind path <<\"${lib.getExe binaries.tailwind}\">>''
-      );
+      flags = erlFlags ''\"'' (toString root) (assetBinariesFor root);
     in
     lib.optionalAttrs (flags != "") { ERL_ZFLAGS = flags; };
-
-  # ERL_ZFLAGS that point esbuild and tailwind at the versions pinned in config/config.exs
-  assetEnv = root: assetEnvFor (assetBinariesFor root);
 
   # Returns { deps, release, name, bin }. deps holds the compiled dependencies and only rebuilds
   # when mix.exs, mix.lock or the compile-time config changes, so CI can cache it.
@@ -178,7 +183,7 @@ let
       defaultPostBuild =
         if lib.hasInfix "\"assets.deploy\"" mixExs then
           ''
-            ${lib.concatStrings (lib.mapAttrsToList (name: value: "export ${name}='${value}'\n") (assetEnvFor assetBinaries))}
+            export ERL_ZFLAGS="${erlFlags ''\\\"'' "$PWD" assetBinaries}"
             mix do deps.loadpaths --no-deps-check + assets.deploy
           ''
         else if builtins.elem "phoenix" lockDeps.names then

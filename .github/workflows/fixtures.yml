@@ -1,0 +1,27 @@
+name: Fixtures
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    name: Fixtures (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/determinate-nix-action@v3.24.2
+      - name: Install devenv
+        run: nix profile add "github:cachix/devenv-nixpkgs/$(jq -r .nodes.nixpkgs.locked.rev devenv.lock)#devenv"
+      - run: >
+          devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps
+          outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.precompiled-nifs
+          outputs.appsignal outputs.tzdata outputs.image outputs.sbom

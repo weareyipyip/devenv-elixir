@@ -1,31 +1,21 @@
-# esbuild and tailwind from nixpkgs for projects that configure them in config/config.exs; the
-# tailwind major version follows the configured one, the rest follows nixpkgs.
+# esbuild and tailwind for the Mix packages, from the first package-lock.json that has them.
+# Paths are relative to root.
 {
   lib,
-  esbuild,
-  tailwindcss_3,
-  tailwindcss_4,
-  configExs,
+  root,
+  npmDirs,
 }:
 let
-  configText = if builtins.pathExists configExs then builtins.readFile configExs else "";
-
-  pinnedVersion =
-    tool:
+  binary =
+    package:
     let
-      match = builtins.match ".*config :${tool},[[:space:]]+version: \"([^\"]+)\".*" configText;
+      dir = lib.findFirst (
+        dir: lib.hasInfix "\"node_modules/${package}\"" (builtins.readFile (root + "/${dir}/package-lock.json"))
+      ) null npmDirs;
     in
-    if match == null then null else builtins.head match;
-
-  tailwindVersion = pinnedVersion "tailwind";
+    if dir == null then null else "${dir}/node_modules/.bin/${package}";
 in
 {
-  esbuild = if pinnedVersion "esbuild" == null then null else esbuild;
-  tailwind =
-    if tailwindVersion == null then
-      null
-    else if lib.versionOlder tailwindVersion "4" then
-      tailwindcss_3
-    else
-      tailwindcss_4;
+  esbuild = binary "esbuild";
+  tailwind = binary "tailwindcss";
 }

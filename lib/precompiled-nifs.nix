@@ -10,8 +10,6 @@
 }:
 let
   releases = {
-    exqlite = "elixir-sqlite/exqlite";
-    lazy_html = "dashbitco/lazy_html";
     mdex_native = "leandrocp/mdex_native";
     vix = "akash-akya/vix";
   };
@@ -35,9 +33,8 @@ let
   isForTarget =
     file: lib.any (target: lib.hasInfix "-${target}-" file || lib.hasInfix "-${target}." file) targets;
 
-  precompiled = lib.filter (dependency: dependency.precompiled or false) dependencies;
-  known = lib.filter (dependency: releases ? ${dependency.app}) precompiled;
-  unknown = lib.filter (dependency: !(releases ? ${dependency.app})) precompiled;
+  # others, such as lazy_html, are only used in tests; the build error names any that is missing
+  known = lib.filter (dependency: releases ? ${dependency.app}) dependencies;
 
   artifacts =
     dependency:
@@ -66,11 +63,9 @@ let
 
   cache = linkFarm "${name}-precompiled-nifs" (lib.concatMap artifacts known);
 in
-lib.warnIf (unknown != [ ])
-  "devenv-elixir: ${lib.concatMapStringsSep ", " (dependency: dependency.app) unknown} download a prebuilt NIF that devenv-elixir does not fetch yet; the build fails unless it falls back to compiling"
-  {
-    env = lib.optionalAttrs (known != [ ]) {
-      ELIXIR_MAKE_CACHE_DIR = "${cache}";
-      RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH = "${cache}";
-    };
-  }
+{
+  env = lib.optionalAttrs (known != [ ]) {
+    ELIXIR_MAKE_CACHE_DIR = "${cache}";
+    RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH = "${cache}";
+  };
+}

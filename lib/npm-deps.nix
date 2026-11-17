@@ -29,6 +29,7 @@ let
   '';
 in
 {
+  inherit dirs;
   nativeBuildInputs = lib.optional (dirs != [ ]) nodejs;
   script = lib.concatMapStrings install dirs;
 }
