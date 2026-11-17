@@ -25,3 +25,22 @@ jobs:
           devenv build outputs.root-deploy outputs.umbrella-subdir outputs.prod-runtime outputs.git-deps
           outputs.mix-assets outputs.mix-assets-tw3 outputs.npm-assets outputs.precompiled-nifs
           outputs.appsignal outputs.tzdata outputs.image outputs.sbom
+
+  # temporary: shows that the release build has no network without lib/precompiled-nifs.nix
+  nif-proof:
+    name: NIFs without the module (expected to fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/determinate-nix-action@v3.24.2
+      - name: Install devenv
+        run: nix profile add "github:cachix/devenv-nixpkgs/$(jq -r .nodes.nixpkgs.locked.rev devenv.lock)#devenv"
+      - run: nix config show | grep -E '^(sandbox|sandbox-fallback) '
+      - name: Build precompiled-nifs without the prebuilt NIFs
+        run: |
+          sed -i 's/env = precompiledNifs.env;/env = { };/' default.nix
+          git diff --stat
+          if devenv build outputs.precompiled-nifs > build.log 2>&1; then
+            echo "::error::built without the module"; exit 1
+          fi
+          grep -iE 'nxdomain|econnrefused|failed to connect|could not|download|httpc|error' build.log | grep -v '^@nix' | head -30
