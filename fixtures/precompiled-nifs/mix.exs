@@ -6,7 +6,7 @@ defmodule FxNifs.MixProject do
       app: :fx_nifs,
       version: "0.0.0+development",
       elixir: "~> 1.18",
-      deps: [{:exqlite, "~> 0.43"}, {:mdex, "~> 0.11"}, {:vix, "~> 0.41"}]
+      deps: [{:mdex, "~> 0.11"}, {:vix, "~> 0.41"}]
     ]
   end
 

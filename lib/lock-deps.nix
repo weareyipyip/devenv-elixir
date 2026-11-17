@@ -29,8 +29,6 @@ let
       {
         app = builtins.elemAt hex 0;
         version = builtins.elemAt hex 2;
-        # downloads a prebuilt NIF at compile time unless it finds one in its cache
-        precompiled = lib.hasInfix "{:cc_precompiler," line || lib.hasInfix "{:rustler_precompiled," line;
         source = beam.fetchHex {
           pkg = builtins.elemAt hex 1;
           version = builtins.elemAt hex 2;
